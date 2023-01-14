@@ -20,6 +20,7 @@ import main.Utils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 
 public class ExpertModule{
@@ -95,17 +96,20 @@ public class ExpertModule{
         }
 
         Button loadButton = new Button("Load");
-        loadButton.setPrefWidth(100);
+        loadButton.setPrefWidth(80);
         Button saveButton = new Button("Save");
-        saveButton.setPrefWidth(100);
+        saveButton.setPrefWidth(80);
+
+        Button deleteButton = new Button("Delete");
+        deleteButton.setPrefWidth(80);
 
         Button previousButton = new Button("Previous");
-        previousButton.setPrefWidth(100);
+        previousButton.setPrefWidth(80);
         Button nextButton = new Button("Next");
-        nextButton.setPrefWidth(100);
+        nextButton.setPrefWidth(80);
         HBox buttons = new HBox();
         buttons.setAlignment(Pos.CENTER);
-        buttons.getChildren().addAll(loadButton, saveButton, previousButton, nextButton);
+        buttons.getChildren().addAll(loadButton, saveButton, deleteButton, previousButton, nextButton);
 
         VBox root = new VBox();
         root.setSpacing(20);
@@ -143,6 +147,8 @@ public class ExpertModule{
 
         loadButton.setOnAction(event -> this.load());
 
+        deleteButton.setOnAction(event -> this.delete());
+
     }
 
     public void calculate(){
@@ -175,9 +181,7 @@ public class ExpertModule{
     }
 
     private void save(){
-        Date date = new Date();
-        Calendar calendar = GregorianCalendar.getInstance();
-        String path = "../data/priorities/expert" + calendar + ".txt";
+        String path = "../data/priorities/expert" + Instant.now().getEpochSecond() + ".txt";
         if(this.isAllFilled()){
             StringBuilder sb = new StringBuilder();
 
@@ -214,9 +218,7 @@ public class ExpertModule{
             p = "priorities0";
         }
         String path = "../data/priorities/" + p + ".txt";
-        System.out.println(path);
         Path filePath = Path.of(path);
-        System.out.println(filePath.getFileName());
         String str = null;
         try {
             str = Files.readString(filePath);
@@ -272,6 +274,21 @@ public class ExpertModule{
                 }
                 i++;
             }
+        }
+    }
+
+    private void delete(){
+        String p = this.expertChoiceBox.getSelectionModel().getSelectedItem();
+        if(p == null){
+            p = "priorities0";
+        }
+        String path = "../data/priorities/" + p + ".txt";
+        File toDelete = new File(path);
+        if(toDelete.delete()){
+            System.out.println("successfully deleted");
+        }
+        else{
+            System.out.println("not deleted");
         }
     }
 
@@ -359,7 +376,7 @@ public class ExpertModule{
 
         if(listOfFiles != null){
             for(File file : listOfFiles){
-                if(file.isFile()){
+                if(file.isFile() && !file.getName().equals("priorities0.txt")){
                     expertsList.add(file.getName().substring(0, file.getName().length()-4));
                 }
             }
