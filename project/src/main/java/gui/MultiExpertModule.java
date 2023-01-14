@@ -2,27 +2,26 @@ package gui;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
-import javafx.geometry.HPos;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import main.Utils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
+
+import static java.lang.Math.pow;
 
 public class MultiExpertModule{
     ArrayList<String> labels;
@@ -32,6 +31,8 @@ public class MultiExpertModule{
     ArrayList<ArrayList<Double>> matrix;
     ArrayList<ArrayList<Text>> matrixContent;
     ArrayList<ArrayList<String>> matrixContentText;
+
+    LinkedList<CheckBox> expertList = new LinkedList<>();
     public MultiExpertModule(ArrayList<String> labels, Application app){
         this.app = app;
         this.labels = labels;
@@ -45,65 +46,32 @@ public class MultiExpertModule{
             this.matrixContent.add(new ArrayList<>(this.labels.size()));
             this.matrixContentText.add(new ArrayList<>(this.labels.size()));
         }
-
-        this.setUpGridPane();
     }
 
     public void start(){
-        for(int row = 0; row<this.labels.size(); row++){
-            for(int col = 0; col<this.labels.size(); col++){
-                if(col == row){
-                    Text content = new Text("1");
-                    content.setFont(Font.font("Verdana", 20));
-                    content.setFill(Color.BLUE);
-                    matrixGrid.add(content, col+1, row+1);
-                    GridPane.setHalignment(content, HPos.CENTER);
-                    matrixContent.get(row).add(content);
-                    this.matrixContentText.get(row).add("1");
-                    matrix.get(row).add((double)(1));
-                }
-                else if(col < row){
-                    Text content = new Text("-");
-                    content.setFont(Font.font("Verdana", 20));
-                    content.setFill(Color.RED);
-                    matrixContent.get(row).add(content);
-                    matrixGrid.add(content, col+1, row+1);
-                    GridPane.setHalignment(content, HPos.CENTER);
-                    this.matrixContentText.get(row).add("-");
-                    matrix.get(row).add((double)(-1));
-                }
-                else{
-                    ChoiceBox<String> choiceBox = new ChoiceBox<>(FXCollections.observableArrayList(
-                            "1/9", "1/7", "1/5", "1/3", "1", "3", "5", "7", "9"
-                    ));
-                    choiceBox.setPrefSize(50, 50);
-                    this.choiceBoxObserve(choiceBox, row, col);
-                    matrixContent.get(row).add(null);
-                    this.matrixContentText.get(row).add("-");
-                    matrixGrid.add(choiceBox, col+1, row+1);
-                    GridPane.setHalignment(choiceBox, HPos.CENTER);
-                    matrix.get(row).add((double)(-1));
-                }
-            }
-        }
-
-        Button loadButton = new Button("Load");
-        loadButton.setPrefWidth(100);
-        Button saveButton = new Button("Save");
-        saveButton.setPrefWidth(100);
-
         Button previousButton = new Button("Previous");
-        previousButton.setPrefWidth(100);
+        previousButton.setPrefWidth(200);
+
         Button nextButton = new Button("Next");
-        nextButton.setPrefWidth(100);
+        nextButton.setPrefWidth(200);
+
         HBox buttons = new HBox();
         buttons.setAlignment(Pos.CENTER);
-        buttons.getChildren().addAll(loadButton, saveButton, previousButton, nextButton);
+        buttons.getChildren().addAll(previousButton, nextButton);
+
+        VBox vbox = new VBox();
+        vbox.setSpacing(5);
+
+        for(String expert : this.getExperts()){
+            CheckBox cb = new CheckBox(expert);
+            vbox.getChildren().add(cb);
+            this.expertList.add(cb);
+        }
 
         VBox root = new VBox();
         root.setSpacing(20);
 
-        root.getChildren().addAll(matrixGrid, buttons);
+        root.getChildren().addAll(vbox, buttons);
 
         Scene scene = new Scene(root);
 
@@ -114,12 +82,12 @@ public class MultiExpertModule{
         expertStage.setOnCloseRequest((WindowEvent we) -> System.exit(0));
 
         nextButton.setOnAction(event -> {
-            if(this.isAllFilled()){
+            if(this.isAnyFilled()){
                 expertStage.close();
                 this.calculate();
             }
             else{
-                System.out.println("fill all remaining fields");
+                System.out.println("choose at least one expert");
             }
         });
 
@@ -132,15 +100,104 @@ public class MultiExpertModule{
             }
         });
 
-        String path = "../data/priorities/priorities.txt";
+    }
 
-        saveButton.setOnAction(event -> this.save(path));
+    private int getExpertsCount(){
+        int counter = 0;
+        for(CheckBox cb : this.expertList){
+            if(cb.isSelected()){
+                counter++;
+            }
+        }
+        return counter;
+    }
 
-        loadButton.setOnAction(event -> this.load(path));
+    private void loadExpert(ArrayList<ArrayList<Double>> expertMatrix, String name){
+        String path = "../data/priorities/" + name + ".txt";
+        Path filePath = Path.of(path);
+        String str = null;
+        try {
+            str = Files.readString(filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        assert str != null;
+        String[] vals = str.split(" ");
 
+        int i = 0;
+        for(int row = 0; row<this.labels.size(); row++){
+            for(int col = 0; col<this.labels.size(); col++){
+                String val = vals[i];
+                if(val.equals("1")){
+                    expertMatrix.get(row).add((double)1);
+                    expertMatrix.get(col).add((double)1);
+                }
+                else if(val.length() == 1){
+                    expertMatrix.get(row).add(Double.parseDouble(val));
+                    expertMatrix.get(col).add((double) 1 / Integer.parseInt(val));
+                }
+                else{
+                    String s = String.valueOf(val.charAt(2));
+                    expertMatrix.get(row).add((double)1 / Integer.parseInt(s));
+                    expertMatrix.get(col).add(Double.parseDouble(s));
+                }
+                i++;
+            }
+        }
+    }
+
+    private double getGeometricMean(int row, int col, ArrayList<ArrayList<ArrayList<Double>>> expertsMatrix, int n){
+        double val = 1;
+        for(ArrayList<ArrayList<Double>> arrayLists : expertsMatrix){
+            val *= arrayLists.get(row).get(col);
+            if(row == 1 && col == 0)
+                System.out.println("a " + arrayLists.get(row).get(col));
+        }
+        if(row == 1 && col == 0)
+            System.out.println("b "+val);
+        return pow(val, 1.0/n);
+    }
+
+    private ArrayList<ArrayList<ArrayList<Double>>> loadExperts(){
+        int n = this.getExpertsCount();
+        ArrayList<ArrayList<ArrayList<Double>>> expertsMatrix = new ArrayList<>(n);
+
+        int i = 0;
+        int j = 0;
+        for(CheckBox cb : this.expertList){
+            if(cb.isSelected()){
+                expertsMatrix.add(new ArrayList<>(this.labels.size()));
+                for(int row = 0; row<this.labels.size(); row++){
+                    expertsMatrix.get(j).add(new ArrayList<>(this.labels.size()));
+                }
+                this.loadExpert(expertsMatrix.get(j), this.getExperts().get(i));
+                j++;
+            }
+            i++;
+        }
+
+        return expertsMatrix;
+    }
+
+    private void fillAggregatedMatrix(){
+        ArrayList<ArrayList<ArrayList<Double>>> expertsMatrix = this.loadExperts();
+
+        for(int row = 0; row<this.labels.size(); row++){
+            for (int col = 0; col < this.labels.size(); col++){
+                this.matrix.get(row).add(getGeometricMean(row, col, expertsMatrix, expertsMatrix.size()));
+            }
+        }
+
+        for(int row = 0; row<this.labels.size(); row++){
+            for (int col = 0; col < this.labels.size(); col++){
+                System.out.print(this.matrix.get(row).get(col) + " ");
+            }
+            System.out.println();
+        }
     }
 
     public void calculate(){
+        this.fillAggregatedMatrix();
         double consistencyIndex = -1;
         try {
             consistencyIndex = Utils.getConsistencyIndex(this.matrix, this.labels.size());
@@ -169,160 +226,30 @@ public class MultiExpertModule{
         resultsStage.show();
     }
 
-    private void save(String path){
-        if(this.isAllFilled()){
-            StringBuilder sb = new StringBuilder();
-
-            for(int row = 0; row<this.labels.size(); row++){
-                for(int col = 0; col<this.labels.size(); col++){
-                    if(row != 0 || col != 0){
-                        sb.append(" ");
-                    }
-                    int c = col;
-                    int r = row;
-                    if(row < col){
-                        c = row;
-                        r = col;
-                    }
-                    sb.append(this.matrixContentText.get(r).get(c));
-                }
-            }
-
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(path))) {
-                bw.write(sb.toString());
-                bw.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+    private boolean isAnyFilled(){
+        for(CheckBox cb : this.expertList){
+            if(cb.isSelected()){
+                return true;
             }
         }
-        else{
-            System.out.println("priorities not saved; fill all fields");
-        }
+        return false;
     }
 
-    private void load(String path){
-        Path filePath = Path.of(path);
-        String str = null;
-        try {
-            str = Files.readString(filePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        assert str != null;
-        String[] vals = str.split(" ");
+    private LinkedList<String> getExperts(){
+        LinkedList<String> experts = new LinkedList<>();
+        String directoryPath = "../data/priorities/";
 
-        int i = 0;
-        for(int row = 0; row<this.labels.size(); row++){
-            for(int col = 0; col<this.labels.size(); col++){
-                String val = vals[i];
-                if(val.equals("1")){
-                    matrix.get(row).set(col, (double)1);
-                    matrix.get(col).set(row, (double)1);
-                    Text content = matrixContent.get(col).get(row);
-                    this.matrixContentText.get(col).set(row, "1");
-                    if(content != null){
-                        content.setText("1");
-                        content.setFill(Color.GREEN);
-                    }
-                }
-                else if(val.length() == 1){
-                    matrix.get(row).set(col, Double.parseDouble(val));
-                    matrix.get(col).set(row, (double) 1 / Integer.parseInt(val));
-                    Text content = matrixContent.get(col).get(row);
-                    this.matrixContentText.get(col).set(row, "1/" + val);
-                    if(content != null){
-                        content.setText(val);
-                        content.setFill(Color.GREEN);
-                    }
-                }
-                else{
-                    String s = String.valueOf(val.charAt(2));
-                    matrix.get(row).set(col, (double)1 / Integer.parseInt(s));
-                    matrix.get(col).set(row, Double.parseDouble(s));
-                    Text content = matrixContent.get(col).get(row);
-                    this.matrixContentText.get(col).set(row, s);
-                    if(content != null){
-                        content.setText(val);
-                        content.setFill(Color.GREEN);
-                    }
-                }
-                i++;
-            }
-        }
-    }
+        File folder = new File(directoryPath);
+        File[] listOfFiles = folder.listFiles();
 
-    private void setUpGridPane(){
-        matrixGrid.setGridLinesVisible(true);
-
-        for(int i = 0; i<this.labels.size(); i++){
-            Text c1 = new Text(this.labels.get(i));
-            Text c2 = new Text(this.labels.get(i));
-            matrixGrid.add(c1, 0, i+1);
-            matrixGrid.add(c2, i+1, 0);
-            GridPane.setHalignment(c1, HPos.CENTER);
-            GridPane.setHalignment(c2, HPos.CENTER);
-        }
-
-        int rowCount = this.labels.size();
-        int columnCount = this.labels.size();
-
-        RowConstraints rc = new RowConstraints();
-        rc.setMinHeight(50);
-        rc.setMaxHeight(50);
-
-        for (int i = 0; i < rowCount+1; i++) {
-            matrixGrid.getRowConstraints().add(rc);
-        }
-
-        ColumnConstraints cc = new ColumnConstraints();
-        cc.setMinWidth(50);
-        cc.setMaxWidth(50);
-
-        for (int i = 0; i < columnCount+1; i++) {
-            matrixGrid.getColumnConstraints().add(cc);
-        }
-    }
-
-    private void choiceBoxObserve(ChoiceBox<String> choiceBox, int row, int col){
-        choiceBox.setOnAction((event) -> {
-            String val = choiceBox.getSelectionModel().getSelectedItem();
-            if(val.equals("1")){
-                matrix.get(row).set(col, (double)1);
-                matrix.get(col).set(row, (double)1);
-                Text content = matrixContent.get(col).get(row);
-                this.matrixContentText.get(col).set(row, "1");
-                content.setText("1");
-                content.setFill(Color.GREEN);
-            }
-            else if(val.length() == 1){
-                matrix.get(row).set(col, Double.parseDouble(val));
-                matrix.get(col).set(row, (double) 1 / Integer.parseInt(val));
-                Text content = matrixContent.get(col).get(row);
-                this.matrixContentText.get(col).set(row, "1/" + val);
-                content.setText("1/" + val);
-                content.setFill(Color.GREEN);
-            }
-            else{
-                String s = String.valueOf(val.charAt(2));
-                matrix.get(row).set(col, (double)1 / Integer.parseInt(s));
-                matrix.get(col).set(row, Double.parseDouble(s));
-                Text content = matrixContent.get(col).get(row);
-                this.matrixContentText.get(col).set(row, s);
-                content.setText(val.substring(2));
-                content.setFill(Color.GREEN);
-            }
-        });
-    }
-
-    private boolean isAllFilled(){
-        for(int row = 0; row<this.labels.size(); row++){
-            for(int col = 0; col<this.labels.size(); col++){
-                if(this.matrix.get(row).get(col) < 0){
-                    return false;
+        if(listOfFiles != null){
+            for(File file : listOfFiles){
+                if(file.isFile() && !file.getName().equals("priorities0.txt")){
+                    experts.add(file.getName().substring(0, file.getName().length()-4));
                 }
             }
         }
-        return true;
+
+        return experts;
     }
 }
-

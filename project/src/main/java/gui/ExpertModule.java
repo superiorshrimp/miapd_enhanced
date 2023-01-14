@@ -20,7 +20,6 @@ import main.Utils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.*;
 
 public class ExpertModule{
@@ -143,6 +142,14 @@ public class ExpertModule{
     }
 
     public void calculate(){
+
+        for(int row = 0; row<this.labels.size(); row++){
+            for (int col = 0; col < this.labels.size(); col++){
+                System.out.print(this.matrix.get(row).get(col) + " ");
+            }
+            System.out.println();
+        }
+
         double consistencyIndex = -1;
         try {
             consistencyIndex = Utils.getConsistencyIndex(this.matrix, this.labels.size());
