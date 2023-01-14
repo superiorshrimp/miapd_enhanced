@@ -1,0 +1,11 @@
+{
+  "name": "Samsung Galaxy S22",
+  "price": 3999,
+  "features" : 5,
+  "ram": 8,
+  "cpu": 968359,
+  "storage": 128,
+  "battery": 5000,
+  "charging": 45,
+  "software": "Android 13"
+}

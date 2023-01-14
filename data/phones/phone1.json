@@ -1,0 +1,11 @@
+{
+  "name": "iPhone 14",
+  "price": 5149,
+  "features" : 4,
+  "ram": 6,
+  "cpu": 817125,
+  "storage": 128,
+  "battery": 3279,
+  "charging": 30,
+  "software": "iOS 16"
+}
