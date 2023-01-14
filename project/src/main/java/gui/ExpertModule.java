@@ -15,7 +15,6 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import main.Utils;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,6 +29,7 @@ public class ExpertModule{
     ArrayList<ArrayList<Double>> matrix;
     ArrayList<ArrayList<Text>> matrixContent;
     ArrayList<ArrayList<String>> matrixContentText;
+    ArrayList<ArrayList<ChoiceBox<String>>> matrixChoiceBox;
     public ExpertModule(ArrayList<String> labels, Application app){
         this.app = app;
         this.labels = labels;
@@ -37,11 +37,13 @@ public class ExpertModule{
         this.matrix = new ArrayList<>(this.labels.size());
         this.matrixContent = new ArrayList<>(this.labels.size());
         this.matrixContentText = new ArrayList<>(this.labels.size());
+        this.matrixChoiceBox = new ArrayList<>(this.labels.size());
 
         for(int row = 0; row<this.labels.size(); row++){
             this.matrix.add(new ArrayList<>(this.labels.size()));
             this.matrixContent.add(new ArrayList<>(this.labels.size()));
             this.matrixContentText.add(new ArrayList<>(this.labels.size()));
+            this.matrixChoiceBox.add(new ArrayList<>(this.labels.size()));
         }
 
         this.setUpGridPane();
@@ -59,6 +61,7 @@ public class ExpertModule{
                     matrixContent.get(row).add(content);
                     this.matrixContentText.get(row).add("1");
                     matrix.get(row).add((double)(1));
+                    this.matrixChoiceBox.get(row).add(null);
                 }
                 else if(col < row){
                     Text content = new Text("-");
@@ -69,11 +72,13 @@ public class ExpertModule{
                     GridPane.setHalignment(content, HPos.CENTER);
                     this.matrixContentText.get(row).add("-");
                     matrix.get(row).add((double)(-1));
+                    this.matrixChoiceBox.get(row).add(null);
                 }
                 else{
                     ChoiceBox<String> choiceBox = new ChoiceBox<>(FXCollections.observableArrayList(
                         "1/9", "1/7", "1/5", "1/3", "1", "3", "5", "7", "9"
                     ));
+                    this.matrixChoiceBox.get(row).add(choiceBox);
                     choiceBox.setPrefSize(50, 50);
                     this.choiceBoxObserve(choiceBox, row, col);
                     matrixContent.get(row).add(null);
@@ -221,6 +226,9 @@ public class ExpertModule{
                     if(content != null){
                         content.setText("1");
                         content.setFill(Color.GREEN);
+                        if(col>row){
+                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                        }
                     }
                 }
                 else if(val.length() == 1){
@@ -231,6 +239,9 @@ public class ExpertModule{
                     if(content != null){
                         content.setText(val);
                         content.setFill(Color.GREEN);
+                        if(col>row){
+                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                        }
                     }
                 }
                 else{
@@ -242,6 +253,9 @@ public class ExpertModule{
                     if(content != null){
                         content.setText(val);
                         content.setFill(Color.GREEN);
+                        if(col>row){
+                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                        }
                     }
                 }
                 i++;
