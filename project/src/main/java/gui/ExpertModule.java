@@ -2,6 +2,7 @@ package gui;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,11 +16,11 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import main.Utils;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 public class ExpertModule{
     ArrayList<String> labels;
@@ -30,6 +31,8 @@ public class ExpertModule{
     ArrayList<ArrayList<Text>> matrixContent;
     ArrayList<ArrayList<String>> matrixContentText;
     ArrayList<ArrayList<ChoiceBox<String>>> matrixChoiceBox;
+
+    ChoiceBox<String> expertChoiceBox;
     public ExpertModule(ArrayList<String> labels, Application app){
         this.app = app;
         this.labels = labels;
@@ -47,6 +50,7 @@ public class ExpertModule{
         }
 
         this.setUpGridPane();
+        this.expertChoiceBox = new ChoiceBox<>(this.getExpertsList());
     }
 
     public void start(){
@@ -106,7 +110,7 @@ public class ExpertModule{
         VBox root = new VBox();
         root.setSpacing(20);
 
-        root.getChildren().addAll(matrixGrid, buttons);
+        root.getChildren().addAll(matrixGrid, buttons, expertChoiceBox);
 
         Scene scene = new Scene(root);
 
@@ -135,11 +139,9 @@ public class ExpertModule{
             }
         });
 
-        String path = "../data/priorities/priorities.txt";
+        saveButton.setOnAction(event -> this.save());
 
-        saveButton.setOnAction(event -> this.save(path));
-
-        loadButton.setOnAction(event -> this.load(path));
+        loadButton.setOnAction(event -> this.load());
 
     }
 
@@ -172,7 +174,10 @@ public class ExpertModule{
         resultsStage.show();
     }
 
-    private void save(String path){
+    private void save(){
+        Date date = new Date();
+        Calendar calendar = GregorianCalendar.getInstance();
+        String path = "../data/priorities/expert" + calendar + ".txt";
         if(this.isAllFilled()){
             StringBuilder sb = new StringBuilder();
 
@@ -203,8 +208,15 @@ public class ExpertModule{
         }
     }
 
-    private void load(String path){
+    private void load(){
+        String p = this.expertChoiceBox.getSelectionModel().getSelectedItem();
+        if(p == null){
+            p = "priorities0";
+        }
+        String path = "../data/priorities/" + p + ".txt";
+        System.out.println(path);
         Path filePath = Path.of(path);
+        System.out.println(filePath.getFileName());
         String str = null;
         try {
             str = Files.readString(filePath);
@@ -335,5 +347,24 @@ public class ExpertModule{
             }
         }
         return true;
+    }
+
+    private ObservableList<String> getExpertsList(){
+        ObservableList<String> expertsList = FXCollections.observableArrayList();
+
+        String directoryPath = "../data/priorities/";
+
+        File folder = new File(directoryPath);
+        File[] listOfFiles = folder.listFiles();
+
+        if(listOfFiles != null){
+            for(File file : listOfFiles){
+                if(file.isFile()){
+                    expertsList.add(file.getName().substring(0, file.getName().length()-4));
+                }
+            }
+        }
+
+        return expertsList;
     }
 }
