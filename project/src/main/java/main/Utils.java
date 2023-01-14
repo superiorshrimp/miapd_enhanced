@@ -15,7 +15,7 @@ public class Utils{
 
     public static double getConsistencyIndex(ArrayList<ArrayList<Double>> matrix, int n) throws Exception{
         //example:
-        //String[] args = "python ../math/consistency_index.py 1 7 0.1666 0.5 0.25 0.1666 4 0.1428 1 0.3333 5 0.2 0.1428 5 6 3 1 6 3 2 8 2 0.2 0.1666 1 8 0.2 8 4 5 0.3333 0.125 1 0.1111 2 6 7 0.5 5 9 1 2 0.25 0.2 0.125 0.125 0.5 0.5 1".split(" ");
+//        String[] args = "python ../math/consistency_index.py 1 7 0.1666 0.5 0.25 0.1666 4 0.1428 1 0.3333 5 0.2 0.1428 5 6 3 1 6 3 2 8 2 0.2 0.1666 1 8 0.2 8 4 5 0.3333 0.125 1 0.1111 2 6 7 0.5 5 9 1 2 0.25 0.2 0.125 0.125 0.5 0.5 1".split(" ");
         StringBuilder command = new StringBuilder("python ../math/consistency_index.py");
         for(int row = 0; row<n; row++){
             for(int col = 0; col<n; col++){
@@ -64,6 +64,11 @@ public class Utils{
                 phoneStatisticsMatrixNormalized[x][y] = phoneStatisticsMatrix[x][y] / maxVal;
             }
         }
+
+        for (int x = 0; x < listOfFiles.length; x ++){
+            phoneStatisticsMatrixNormalized[x][0] = 1 - phoneStatisticsMatrixNormalized[x][0];
+        }
+
         System.out.println(Arrays.deepToString(phoneStatisticsMatrix));
         System.out.println(Arrays.deepToString(phoneStatisticsMatrixNormalized));
 
