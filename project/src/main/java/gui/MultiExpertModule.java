@@ -1,17 +1,12 @@
 package gui;
 
 import javafx.application.Application;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import main.Utils;
@@ -27,10 +22,7 @@ public class MultiExpertModule{
     ArrayList<String> labels;
     Application app;
 
-    GridPane matrixGrid = new GridPane();
     ArrayList<ArrayList<Double>> matrix;
-    ArrayList<ArrayList<Text>> matrixContent;
-    ArrayList<ArrayList<String>> matrixContentText;
 
     LinkedList<CheckBox> expertList = new LinkedList<>();
     public MultiExpertModule(ArrayList<String> labels, Application app){
@@ -38,13 +30,9 @@ public class MultiExpertModule{
         this.labels = labels;
 
         this.matrix = new ArrayList<>(this.labels.size());
-        this.matrixContent = new ArrayList<>(this.labels.size());
-        this.matrixContentText = new ArrayList<>(this.labels.size());
 
         for(int row = 0; row<this.labels.size(); row++){
             this.matrix.add(new ArrayList<>(this.labels.size()));
-            this.matrixContent.add(new ArrayList<>(this.labels.size()));
-            this.matrixContentText.add(new ArrayList<>(this.labels.size()));
         }
     }
 
@@ -130,16 +118,13 @@ public class MultiExpertModule{
                 String val = vals[i];
                 if(val.equals("1")){
                     expertMatrix.get(row).add((double)1);
-                    expertMatrix.get(col).add((double)1);
                 }
                 else if(val.length() == 1){
                     expertMatrix.get(row).add(Double.parseDouble(val));
-                    expertMatrix.get(col).add((double) 1 / Integer.parseInt(val));
                 }
                 else{
                     String s = String.valueOf(val.charAt(2));
                     expertMatrix.get(row).add((double)1 / Integer.parseInt(s));
-                    expertMatrix.get(col).add(Double.parseDouble(s));
                 }
                 i++;
             }
@@ -150,11 +135,7 @@ public class MultiExpertModule{
         double val = 1;
         for(ArrayList<ArrayList<Double>> arrayLists : expertsMatrix){
             val *= arrayLists.get(row).get(col);
-            if(row == 1 && col == 0)
-                System.out.println("a " + arrayLists.get(row).get(col));
         }
-        if(row == 1 && col == 0)
-            System.out.println("b "+val);
         return pow(val, 1.0/n);
     }
 
@@ -171,6 +152,17 @@ public class MultiExpertModule{
                     expertsMatrix.get(j).add(new ArrayList<>(this.labels.size()));
                 }
                 this.loadExpert(expertsMatrix.get(j), this.getExperts().get(i));
+
+//                if (j < 3) {
+//                    for (int row = 0; row < this.labels.size(); row++) {
+//                        for (int col = 0; col < this.labels.size(); col++) {
+//                            System.out.print(expertsMatrix.get(j).get(row).get(col) + " ");
+//                        }
+//                        System.out.println();
+//                    }
+//                    System.out.println();
+//                }
+
                 j++;
             }
             i++;
@@ -188,12 +180,13 @@ public class MultiExpertModule{
             }
         }
 
-        for(int row = 0; row<this.labels.size(); row++){
-            for (int col = 0; col < this.labels.size(); col++){
-                System.out.print(this.matrix.get(row).get(col) + " ");
-            }
-            System.out.println();
-        }
+//        System.out.println("aggregated matrix: ");
+//        for(int row = 0; row<this.labels.size(); row++){
+//            for (int col = 0; col < this.labels.size(); col++){
+//                System.out.print(this.matrix.get(row).get(col) + " ");
+//            }
+//            System.out.println();
+//        }
     }
 
     public void calculate(){

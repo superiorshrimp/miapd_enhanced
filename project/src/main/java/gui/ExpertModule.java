@@ -29,7 +29,6 @@ public class ExpertModule{
     GridPane matrixGrid = new GridPane();
     ArrayList<ArrayList<Double>> matrix;
     ArrayList<ArrayList<Text>> matrixContent;
-    ArrayList<ArrayList<String>> matrixContentText;
     ArrayList<ArrayList<ChoiceBox<String>>> matrixChoiceBox;
 
     ChoiceBox<String> expertChoiceBox;
@@ -39,13 +38,11 @@ public class ExpertModule{
 
         this.matrix = new ArrayList<>(this.labels.size());
         this.matrixContent = new ArrayList<>(this.labels.size());
-        this.matrixContentText = new ArrayList<>(this.labels.size());
         this.matrixChoiceBox = new ArrayList<>(this.labels.size());
 
         for(int row = 0; row<this.labels.size(); row++){
             this.matrix.add(new ArrayList<>(this.labels.size()));
             this.matrixContent.add(new ArrayList<>(this.labels.size()));
-            this.matrixContentText.add(new ArrayList<>(this.labels.size()));
             this.matrixChoiceBox.add(new ArrayList<>(this.labels.size()));
         }
 
@@ -63,7 +60,6 @@ public class ExpertModule{
                     matrixGrid.add(content, col+1, row+1);
                     GridPane.setHalignment(content, HPos.CENTER);
                     matrixContent.get(row).add(content);
-                    this.matrixContentText.get(row).add("1");
                     matrix.get(row).add((double)(1));
                     this.matrixChoiceBox.get(row).add(null);
                 }
@@ -74,7 +70,6 @@ public class ExpertModule{
                     matrixContent.get(row).add(content);
                     matrixGrid.add(content, col+1, row+1);
                     GridPane.setHalignment(content, HPos.CENTER);
-                    this.matrixContentText.get(row).add("-");
                     matrix.get(row).add((double)(-1));
                     this.matrixChoiceBox.get(row).add(null);
                 }
@@ -86,7 +81,6 @@ public class ExpertModule{
                     choiceBox.setPrefSize(50, 50);
                     this.choiceBoxObserve(choiceBox, row, col);
                     matrixContent.get(row).add(null);
-                    this.matrixContentText.get(row).add("-");
                     matrixGrid.add(choiceBox, col+1, row+1);
                     GridPane.setHalignment(choiceBox, HPos.CENTER);
                     matrix.get(row).add((double)(-1));
@@ -142,13 +136,12 @@ public class ExpertModule{
     }
 
     public void calculate(){
-
-        for(int row = 0; row<this.labels.size(); row++){
-            for (int col = 0; col < this.labels.size(); col++){
-                System.out.print(this.matrix.get(row).get(col) + " ");
-            }
-            System.out.println();
-        }
+//        for(int row = 0; row<this.labels.size(); row++){
+//            for (int col = 0; col < this.labels.size(); col++){
+//                System.out.print(this.matrix.get(row).get(col) + " ");
+//            }
+//            System.out.println();
+//        }
 
         double consistencyIndex = -1;
         try {
@@ -198,44 +191,41 @@ public class ExpertModule{
         for(int row = 0; row<this.labels.size(); row++){
             for(int col = 0; col<this.labels.size(); col++){
                 String val = vals[i];
-                if(val.equals("1")){
-                    matrix.get(row).set(col, (double)1);
-                    matrix.get(col).set(row, (double)1);
-                    Text content = matrixContent.get(col).get(row);
-                    this.matrixContentText.get(col).set(row, "1");
-                    if(content != null){
+                if(col<=row){
+                    if(val.equals("1")){
+                        matrix.get(row).set(col, (double)1);
+                        Text content = matrixContent.get(row).get(col);
                         content.setText("1");
                         content.setFill(Color.GREEN);
-                        if(col>row){
-                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
-                        }
                     }
-                }
-                else if(val.length() == 1){
-                    matrix.get(row).set(col, Double.parseDouble(val));
-                    matrix.get(col).set(row, (double) 1 / Integer.parseInt(val));
-                    Text content = matrixContent.get(col).get(row);
-                    this.matrixContentText.get(col).set(row, "1/" + val);
-                    if(content != null){
+                    else if(val.length() == 1){
+                        matrix.get(row).set(col, Double.parseDouble(val));
+                        Text content = matrixContent.get(row).get(col);
                         content.setText(val);
                         content.setFill(Color.GREEN);
-                        if(col>row){
-                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
-                        }
+                    }
+                    else{
+                        String s = String.valueOf(val.charAt(2));
+                        matrix.get(row).set(col, (double)1 / Integer.parseInt(s));
+                        Text content = matrixContent.get(row).get(col);
+                        content.setText(val);
+                        content.setFill(Color.GREEN);
                     }
                 }
                 else{
-                    String s = String.valueOf(val.charAt(2));
-                    matrix.get(row).set(col, (double)1 / Integer.parseInt(s));
-                    matrix.get(col).set(row, Double.parseDouble(s));
-                    Text content = matrixContent.get(col).get(row);
-                    this.matrixContentText.get(col).set(row, s);
-                    if(content != null){
-                        content.setText(val);
-                        content.setFill(Color.GREEN);
-                        if(col>row){
-                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
-                        }
+                    if(val.equals("1")){
+                        matrix.get(row).set(col, (double)1);
+                        this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+
+                    }
+                    else if(val.length() == 1){
+                        matrix.get(row).set(col, Double.parseDouble(val));
+                        this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                    }
+                    else{
+                        String s = String.valueOf(val.charAt(2));
+                        matrix.get(row).set(col, (double)1 / Integer.parseInt(s));
+                        this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
                     }
                 }
                 i++;
@@ -282,7 +272,6 @@ public class ExpertModule{
                 matrix.get(row).set(col, (double)1);
                 matrix.get(col).set(row, (double)1);
                 Text content = matrixContent.get(col).get(row);
-                this.matrixContentText.get(col).set(row, "1");
                 content.setText("1");
                 content.setFill(Color.GREEN);
             }
@@ -290,7 +279,6 @@ public class ExpertModule{
                 matrix.get(row).set(col, Double.parseDouble(val));
                 matrix.get(col).set(row, (double) 1 / Integer.parseInt(val));
                 Text content = matrixContent.get(col).get(row);
-                this.matrixContentText.get(col).set(row, "1/" + val);
                 content.setText("1/" + val);
                 content.setFill(Color.GREEN);
             }
@@ -299,7 +287,6 @@ public class ExpertModule{
                 matrix.get(row).set(col, (double)1 / Integer.parseInt(s));
                 matrix.get(col).set(row, Double.parseDouble(s));
                 Text content = matrixContent.get(col).get(row);
-                this.matrixContentText.get(col).set(row, s);
                 content.setText(val.substring(2));
                 content.setFill(Color.GREEN);
             }
