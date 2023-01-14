@@ -2,27 +2,24 @@ package gui;
 
 import javafx.application.Application;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Label;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
-import main.Utils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 
 public class ManageExperts{
     ArrayList<String> labels;
@@ -32,6 +29,9 @@ public class ManageExperts{
     ArrayList<ArrayList<Double>> matrix;
     ArrayList<ArrayList<Text>> matrixContent;
     ArrayList<ArrayList<String>> matrixContentText;
+    ArrayList<ArrayList<ChoiceBox<String>>> matrixChoiceBox;
+
+    ChoiceBox<String> expertChoiceBox;
     public ManageExperts(ArrayList<String> labels, Application app){
         this.app = app;
         this.labels = labels;
@@ -39,14 +39,17 @@ public class ManageExperts{
         this.matrix = new ArrayList<>(this.labels.size());
         this.matrixContent = new ArrayList<>(this.labels.size());
         this.matrixContentText = new ArrayList<>(this.labels.size());
+        this.matrixChoiceBox = new ArrayList<>(this.labels.size());
 
         for(int row = 0; row<this.labels.size(); row++){
             this.matrix.add(new ArrayList<>(this.labels.size()));
             this.matrixContent.add(new ArrayList<>(this.labels.size()));
             this.matrixContentText.add(new ArrayList<>(this.labels.size()));
+            this.matrixChoiceBox.add(new ArrayList<>(this.labels.size()));
         }
 
         this.setUpGridPane();
+        this.expertChoiceBox = new ChoiceBox<>(this.getExpertsList());
     }
 
     public void start(){
@@ -61,6 +64,7 @@ public class ManageExperts{
                     matrixContent.get(row).add(content);
                     this.matrixContentText.get(row).add("1");
                     matrix.get(row).add((double)(1));
+                    this.matrixChoiceBox.get(row).add(null);
                 }
                 else if(col < row){
                     Text content = new Text("-");
@@ -71,11 +75,13 @@ public class ManageExperts{
                     GridPane.setHalignment(content, HPos.CENTER);
                     this.matrixContentText.get(row).add("-");
                     matrix.get(row).add((double)(-1));
+                    this.matrixChoiceBox.get(row).add(null);
                 }
                 else{
                     ChoiceBox<String> choiceBox = new ChoiceBox<>(FXCollections.observableArrayList(
                             "1/9", "1/7", "1/5", "1/3", "1", "3", "5", "7", "9"
                     ));
+                    this.matrixChoiceBox.get(row).add(choiceBox);
                     choiceBox.setPrefSize(50, 50);
                     this.choiceBoxObserve(choiceBox, row, col);
                     matrixContent.get(row).add(null);
@@ -89,21 +95,23 @@ public class ManageExperts{
 
         Button loadButton = new Button("Load");
         loadButton.setPrefWidth(100);
+
         Button saveButton = new Button("Save");
         saveButton.setPrefWidth(100);
 
+        Button deleteButton = new Button("Delete");
+        deleteButton.setPrefWidth(100);
+
         Button previousButton = new Button("Previous");
         previousButton.setPrefWidth(100);
-        Button nextButton = new Button("Next");
-        nextButton.setPrefWidth(100);
         HBox buttons = new HBox();
         buttons.setAlignment(Pos.CENTER);
-        buttons.getChildren().addAll(loadButton, saveButton, previousButton, nextButton);
+        buttons.getChildren().addAll(loadButton, saveButton, deleteButton, previousButton);
 
         VBox root = new VBox();
         root.setSpacing(20);
 
-        root.getChildren().addAll(matrixGrid, buttons);
+        root.getChildren().addAll(matrixGrid, buttons, expertChoiceBox);
 
         Scene scene = new Scene(root);
 
@@ -112,16 +120,6 @@ public class ManageExperts{
         expertStage.show();
 
         expertStage.setOnCloseRequest((WindowEvent we) -> System.exit(0));
-
-        nextButton.setOnAction(event -> {
-            if(this.isAllFilled()){
-                expertStage.close();
-                this.calculate();
-            }
-            else{
-                System.out.println("fill all remaining fields");
-            }
-        });
 
         previousButton.setOnAction(event -> {
             expertStage.close();
@@ -132,44 +130,16 @@ public class ManageExperts{
             }
         });
 
-        String path = "../data/priorities/priorities.txt";
+        saveButton.setOnAction(event -> this.save());
 
-        saveButton.setOnAction(event -> this.save(path));
+        loadButton.setOnAction(event -> this.load());
 
-        loadButton.setOnAction(event -> this.load(path));
+        deleteButton.setOnAction(event -> this.delete());
 
     }
 
-    public void calculate(){
-        double consistencyIndex = -1;
-        try {
-            consistencyIndex = Utils.getConsistencyIndex(this.matrix, this.labels.size());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        System.out.println("consistency index: " + consistencyIndex);
-        if(consistencyIndex > 0.1){
-            System.out.println("Warning: consistency index is greater than 0.1, therefore results may not be correct!");
-        }
-
-        try {
-            this.showResults(Utils.getResults(this.matrix, this.labels, this.labels.size()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void showResults(Map<?, ?> bestPhone){
-        Stage resultsStage = new Stage();
-        resultsStage.setTitle("Results");
-        HBox hBox = new HBox(new Label(bestPhone.toString()));
-        Scene scene = new Scene(hBox);
-        resultsStage.setScene(scene);
-        resultsStage.show();
-    }
-
-    private void save(String path){
+    private void save(){
+        String path = "../data/priorities/expert" + Instant.now().getEpochSecond() + ".txt";
         if(this.isAllFilled()){
             StringBuilder sb = new StringBuilder();
 
@@ -200,7 +170,12 @@ public class ManageExperts{
         }
     }
 
-    private void load(String path){
+    private void load(){
+        String p = this.expertChoiceBox.getSelectionModel().getSelectedItem();
+        if(p == null){
+            p = "priorities0";
+        }
+        String path = "../data/priorities/" + p + ".txt";
         Path filePath = Path.of(path);
         String str = null;
         try {
@@ -223,6 +198,9 @@ public class ManageExperts{
                     if(content != null){
                         content.setText("1");
                         content.setFill(Color.GREEN);
+                        if(col>row){
+                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                        }
                     }
                 }
                 else if(val.length() == 1){
@@ -233,6 +211,9 @@ public class ManageExperts{
                     if(content != null){
                         content.setText(val);
                         content.setFill(Color.GREEN);
+                        if(col>row){
+                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                        }
                     }
                 }
                 else{
@@ -244,10 +225,28 @@ public class ManageExperts{
                     if(content != null){
                         content.setText(val);
                         content.setFill(Color.GREEN);
+                        if(col>row){
+                            this.matrixChoiceBox.get(row).get(col).getSelectionModel().select(val);
+                        }
                     }
                 }
                 i++;
             }
+        }
+    }
+
+    private void delete(){
+        String p = this.expertChoiceBox.getSelectionModel().getSelectedItem();
+        if(p == null){
+            p = "priorities0";
+        }
+        String path = "../data/priorities/" + p + ".txt";
+        File toDelete = new File(path);
+        if(toDelete.delete()){
+            System.out.println("successfully deleted");
+        }
+        else{
+            System.out.println("not deleted");
         }
     }
 
@@ -323,5 +322,24 @@ public class ManageExperts{
             }
         }
         return true;
+    }
+
+    private ObservableList<String> getExpertsList(){
+        ObservableList<String> expertsList = FXCollections.observableArrayList();
+
+        String directoryPath = "../data/priorities/";
+
+        File folder = new File(directoryPath);
+        File[] listOfFiles = folder.listFiles();
+
+        if(listOfFiles != null){
+            for(File file : listOfFiles){
+                if(file.isFile() && !file.getName().equals("priorities0.txt")){
+                    expertsList.add(file.getName().substring(0, file.getName().length()-4));
+                }
+            }
+        }
+
+        return expertsList;
     }
 }

@@ -96,20 +96,15 @@ public class ExpertModule{
         }
 
         Button loadButton = new Button("Load");
-        loadButton.setPrefWidth(80);
-        Button saveButton = new Button("Save");
-        saveButton.setPrefWidth(80);
-
-        Button deleteButton = new Button("Delete");
-        deleteButton.setPrefWidth(80);
+        loadButton.setPrefWidth(133);
 
         Button previousButton = new Button("Previous");
-        previousButton.setPrefWidth(80);
+        previousButton.setPrefWidth(133);
         Button nextButton = new Button("Next");
-        nextButton.setPrefWidth(80);
+        nextButton.setPrefWidth(133);
         HBox buttons = new HBox();
         buttons.setAlignment(Pos.CENTER);
-        buttons.getChildren().addAll(loadButton, saveButton, deleteButton, previousButton, nextButton);
+        buttons.getChildren().addAll(loadButton, previousButton, nextButton);
 
         VBox root = new VBox();
         root.setSpacing(20);
@@ -143,11 +138,7 @@ public class ExpertModule{
             }
         });
 
-        saveButton.setOnAction(event -> this.save());
-
         loadButton.setOnAction(event -> this.load());
-
-        deleteButton.setOnAction(event -> this.delete());
 
     }
 
@@ -178,38 +169,6 @@ public class ExpertModule{
         Scene scene = new Scene(hBox);
         resultsStage.setScene(scene);
         resultsStage.show();
-    }
-
-    private void save(){
-        String path = "../data/priorities/expert" + Instant.now().getEpochSecond() + ".txt";
-        if(this.isAllFilled()){
-            StringBuilder sb = new StringBuilder();
-
-            for(int row = 0; row<this.labels.size(); row++){
-                for(int col = 0; col<this.labels.size(); col++){
-                    if(row != 0 || col != 0){
-                        sb.append(" ");
-                    }
-                    int c = col;
-                    int r = row;
-                    if(row < col){
-                        c = row;
-                        r = col;
-                    }
-                    sb.append(this.matrixContentText.get(r).get(c));
-                }
-            }
-
-            try (BufferedWriter bw = new BufferedWriter(new FileWriter(path))) {
-                bw.write(sb.toString());
-                bw.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else{
-            System.out.println("priorities not saved; fill all fields");
-        }
     }
 
     private void load(){
@@ -274,21 +233,6 @@ public class ExpertModule{
                 }
                 i++;
             }
-        }
-    }
-
-    private void delete(){
-        String p = this.expertChoiceBox.getSelectionModel().getSelectedItem();
-        if(p == null){
-            p = "priorities0";
-        }
-        String path = "../data/priorities/" + p + ".txt";
-        File toDelete = new File(path);
-        if(toDelete.delete()){
-            System.out.println("successfully deleted");
-        }
-        else{
-            System.out.println("not deleted");
         }
     }
 
